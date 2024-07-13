@@ -1,3 +1,3 @@
 # FullstackOpen
 
-Just going through [https://fullstackopen.com/en/](FullstackOpen) to refine my skills.
+Just going through [FullstackOpen](https://fullstackopen.com/en/) to refine my skills.
