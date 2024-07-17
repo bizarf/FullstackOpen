@@ -1,12 +1,9 @@
 const express = require("express");
+const cors = require("cors");
 const app = express();
 
-const unknownEndpoint = (req, res) => {
-    res.status(404).send({ error: "unknown endpoint" });
-};
-
 app.use(express.json());
-app.use(unknownEndpoint);
+app.use(cors());
 
 let notes = [
     {
@@ -83,6 +80,13 @@ app.post("/api/notes", (req, res) => {
     res.json(note);
 });
 
-const PORT = 3001;
+// 404 message for when a user tries to go to a route that doesn't exist
+const unknownEndpoint = (req, res) => {
+    res.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
