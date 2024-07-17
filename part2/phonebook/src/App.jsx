@@ -4,13 +4,17 @@ import Persons from "./components/Persons";
 import PersonForm from "./components/PersonForm";
 import { useEffect } from "react";
 import personService from "./services/persons";
+import Notification from "./components/Notification";
 
 const App = () => {
     const [persons, setPersons] = useState([]);
     const [newName, setNewName] = useState("");
     const [newNumber, setNewNumber] = useState("");
     const [nameFilter, setNameFilter] = useState("");
+    const [notificationMessage, setNotificationMessage] = useState(null);
+    const [notificationClass, setNotificationClass] = useState(null);
 
+    // fetch notes from server
     useEffect(() => {
         personService.getAll().then((initialData) => {
             setPersons(initialData);
@@ -24,6 +28,7 @@ const App = () => {
             number: newNumber,
         };
 
+        // check if the name already exists
         if (persons.some((person) => person.name === newName)) {
             const person = persons.find((person) => person.name === newName);
 
@@ -44,6 +49,11 @@ const App = () => {
             }
         } else {
             personService.create(newPerson).then((returnedData) => {
+                setNotificationClass("success");
+                setNotificationMessage(`Added ${newPerson.name}`);
+                setTimeout(() => {
+                    setNotificationMessage(null);
+                }, 5000);
                 setPersons([...persons, returnedData]);
                 setNewName("");
                 setNewNumber("");
@@ -54,9 +64,21 @@ const App = () => {
     const deleteNumber = (id) => {
         const person = persons.find((person) => person.id === id);
         if (window.confirm(`Delete ${person.name}`)) {
-            personService.remove(id, person).then(() => {
-                setPersons(persons.filter((person) => person.id !== id));
-            });
+            personService
+                .remove(id, person)
+                .then(() => {
+                    setPersons(persons.filter((person) => person.id !== id));
+                })
+                .catch((err) => {
+                    setNotificationClass("error");
+                    setNotificationMessage(
+                        `Information of ${person.name} has already been removed from server`
+                    );
+                    setTimeout(() => {
+                        setNotificationMessage(null);
+                    }, 5000);
+                    setPersons(persons.filter((person) => person.id !== id));
+                });
         }
     };
 
@@ -82,6 +104,10 @@ const App = () => {
     return (
         <div>
             <h2>Phonebook</h2>
+            <Notification
+                notificationClass={notificationClass}
+                message={notificationMessage}
+            />
             <Filter
                 nameFilter={nameFilter}
                 handleFilterChange={handleFilterChange}
