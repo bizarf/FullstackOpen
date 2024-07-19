@@ -1,9 +1,14 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const morgan = require("morgan");
 const app = express();
+const Note = require("./models/note");
 
+app.use(express.static("dist"));
 app.use(express.json());
 app.use(cors());
+app.use(morgan("tiny"));
 
 let notes = [
     {
@@ -29,38 +34,37 @@ app.get("/", (req, res) => {
 
 // fetch all notes
 app.get("/api/notes", (req, res) => {
-    res.json(notes);
+    Note.find({}).then((notes) => {
+        res.json(notes);
+    });
 });
 
 // fetch a single note
-app.get("/api/notes/:id", (req, res) => {
-    const id = req.params.id;
-    const note = notes.find((note) => note.id === id);
-
-    if (note) {
-        res.json(note);
-    } else {
-        res.status(404).send("That note does not exist");
-    }
+app.get("/api/notes/:id", (req, res, next) => {
+    Note.findById(req.params.id)
+        .then((note) => {
+            if (note) {
+                res.json(note);
+            } else {
+                res.status(404).end();
+            }
+        })
+        .catch((err) => {
+            next(err);
+        });
 });
 
 // delete a note
-app.delete("/api/notes/:id", (req, res) => {
-    const id = req.params.id;
-    notes = notes.filter((note) => note.id != id);
-
-    res.status(204).end();
+app.delete("/api/notes/:id", (req, res, next) => {
+    Note.findByIdAndDelete(req.params.id)
+        .then((result) => {
+            res.status(204).end();
+        })
+        .catch((err) => next(err));
 });
 
-const generateId = () => {
-    const maxId =
-        notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0;
-
-    return String(maxId + 1);
-};
-
 // add a note
-app.post("/api/notes", (req, res) => {
+app.post("/api/notes", (req, res, next) => {
     const body = req.body;
 
     if (!body.content) {
@@ -69,15 +73,31 @@ app.post("/api/notes", (req, res) => {
         });
     }
 
-    const note = {
+    const note = new Note({
         content: body.content,
-        important: Boolean(body.important) || false,
-        id: generateId(),
-    };
+        important: body.important || false,
+    });
 
-    notes = [...notes, note];
+    note.save()
+        .then((savedNote) => {
+            res.json(savedNote);
+        })
+        .catch((err) => next(err));
+});
 
-    res.json(note);
+// update note
+app.put("/api/notes/:id", (req, res, next) => {
+    const { content, important } = req.body;
+
+    Note.findByIdAndUpdate(
+        req.params.id,
+        { content, important },
+        { new: true, runValidators: true, context: "query" }
+    )
+        .then((updatedNote) => {
+            res.json(updatedNote);
+        })
+        .catch((err) => next(err));
 });
 
 // 404 message for when a user tries to go to a route that doesn't exist
@@ -87,6 +107,21 @@ const unknownEndpoint = (req, res) => {
 
 app.use(unknownEndpoint);
 
-const PORT = process.env.PORT || 3001;
+const errorHandler = (err, req, res, next) => {
+    console.error(err.message);
+
+    if (err.name === "CastError") {
+        return response.status(400).send({ error: "malformatted id" });
+    } else if (err.name === "ValidationError") {
+        return res.status(400).json({ error: err.message });
+    }
+
+    next(err);
+};
+
+// this has to be the last loaded middleware, also all the routes should be registered before this!
+app.use(errorHandler);
+
+const PORT = process.env.PORT;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);

@@ -48,16 +48,25 @@ const App = () => {
                     });
             }
         } else {
-            personService.create(newPerson).then((returnedData) => {
-                setNotificationClass("success");
-                setNotificationMessage(`Added ${newPerson.name}`);
-                setTimeout(() => {
-                    setNotificationMessage(null);
-                }, 5000);
-                setPersons([...persons, returnedData]);
-                setNewName("");
-                setNewNumber("");
-            });
+            personService
+                .create(newPerson)
+                .then((returnedData) => {
+                    setNotificationClass("success");
+                    setNotificationMessage(`Added ${newPerson.name}`);
+                    setTimeout(() => {
+                        setNotificationMessage(null);
+                    }, 5000);
+                    setPersons([...persons, returnedData]);
+                    setNewName("");
+                    setNewNumber("");
+                })
+                .catch((err) => {
+                    setNotificationClass("error");
+                    setNotificationMessage(err.response.data.error);
+                    setTimeout(() => {
+                        setNotificationMessage(null);
+                    }, 5000);
+                });
         }
     };
 
