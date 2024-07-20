@@ -45,6 +45,13 @@ const App = () => {
                                 p.id !== person.id ? p : returnedNote
                             )
                         );
+                    })
+                    .catch((err) => {
+                        setNotificationClass("error");
+                        setNotificationMessage(err.response.data.error);
+                        setTimeout(() => {
+                            setNotificationMessage(null);
+                        }, 5000);
                     });
             }
         } else {
