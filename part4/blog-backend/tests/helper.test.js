@@ -84,3 +84,147 @@ describe("favourite blog", () => {
         });
     });
 });
+
+describe("most blogs", () => {
+    test("author and number of blogs", () => {
+        const listWithMultipleBlogs = [
+            {
+                title: "Post One",
+                author: "Joe Bloggs",
+                likes: 20,
+            },
+            {
+                title: "Post Two",
+                author: "Trish Mac",
+                likes: 32,
+            },
+            {
+                title: "Post Three",
+                author: "Trish Mac",
+                likes: 18,
+            },
+            {
+                title: "Post Four",
+                author: "Tim Smith",
+                likes: 10,
+            },
+            {
+                title: "Post Five",
+                author: "Trish Mac",
+                likes: 26,
+            },
+        ];
+
+        assert.deepStrictEqual(listHelper.mostBlogs(listWithMultipleBlogs), {
+            author: "Trish Mac",
+            blogs: 3,
+        });
+    });
+
+    test("returns just one result if there are multiple highest", () => {
+        const listWithMultipleBlogs = [
+            {
+                title: "Post One",
+                author: "Joe Bloggs",
+                likes: 20,
+            },
+            {
+                title: "Post Two",
+                author: "Trish Mac",
+                likes: 32,
+            },
+            {
+                title: "Post Three",
+                author: "Trish Mac",
+                likes: 18,
+            },
+            {
+                title: "Post Four",
+                author: "Tim Smith",
+                likes: 10,
+            },
+            {
+                title: "Post Five",
+                author: "Tim Smith",
+                likes: 26,
+            },
+        ];
+
+        assert.deepStrictEqual(listHelper.mostBlogs(listWithMultipleBlogs), {
+            author: "Tim Smith",
+            blogs: 2,
+        });
+    });
+});
+
+describe("most likes", () => {
+    test("author and number of likes", () => {
+        const listWithMultipleBlogs = [
+            {
+                title: "Post One",
+                author: "Joe Bloggs",
+                likes: 20,
+            },
+            {
+                title: "Post Two",
+                author: "Trish Mac",
+                likes: 32,
+            },
+            {
+                title: "Post Three",
+                author: "Trish Mac",
+                likes: 18,
+            },
+            {
+                title: "Post Four",
+                author: "Tim Smith",
+                likes: 10,
+            },
+            {
+                title: "Post Five",
+                author: "Trish Mac",
+                likes: 26,
+            },
+        ];
+
+        assert.deepStrictEqual(listHelper.mostLikes(listWithMultipleBlogs), {
+            author: "Trish Mac",
+            likes: 32,
+        });
+    });
+
+    test("returns just one result if there are multiple highest", () => {
+        const listWithMultipleBlogs = [
+            {
+                title: "Post One",
+                author: "Joe Bloggs",
+                likes: 32,
+            },
+            {
+                title: "Post Two",
+                author: "Trish Mac",
+                likes: 32,
+            },
+            {
+                title: "Post Three",
+                author: "Trish Mac",
+                likes: 18,
+            },
+            {
+                title: "Post Four",
+                author: "Tim Smith",
+                likes: 10,
+            },
+            {
+                title: "Post Five",
+                author: "Tim Smith",
+                likes: 26,
+            },
+        ];
+
+        assert.deepStrictEqual(listHelper.mostLikes(listWithMultipleBlogs), {
+            author: "Joe Bloggs",
+            likes: 32,
+        });
+    });
+});
