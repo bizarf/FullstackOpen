@@ -1,9 +1,10 @@
 const config = require("./utils/config");
 const express = require("express");
+require("express-async-errors");
 const app = express();
 const cors = require("cors");
 const morgan = require("morgan");
-const notesRouter = require("./controller/notes");
+const notesRouter = require("./controller/note");
 const middleware = require("./utils/middleware");
 const logger = require("./utils/logger");
 const mongoose = require("mongoose");
