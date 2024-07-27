@@ -19,6 +19,16 @@ const errorHandler = (err, req, res, next) => {
     if (err.name === "CastError") {
         return res.status(400).send({ error: "malformatted id" });
     } else if (err.name === "ValidationError") {
+        if (
+            err.message.includes(
+                "is shorter than the minimum allowed length (3)."
+            )
+        ) {
+            return res.status(400).json({
+                error: "expected `username` to be at least three characters",
+            });
+        }
+
         return res.status(400).json({ error: err.message });
     } else if (
         err.name === "MongoServerError" &&
@@ -38,8 +48,19 @@ const errorHandler = (err, req, res, next) => {
     next(err);
 };
 
+const tokenExtractor = async (req, res, next) => {
+    const authorization = req.get("authorization");
+    if (authorization && authorization.startsWith("Bearer ")) {
+        req.token = authorization.replace("Bearer ", "");
+    } else {
+        req.token = null;
+    }
+    next();
+};
+
 module.exports = {
     unknownEndpoint,
     errorHandler,
     requestLogger,
+    tokenExtractor,
 };
