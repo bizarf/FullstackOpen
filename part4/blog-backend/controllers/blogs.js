@@ -1,7 +1,6 @@
 const blogRouter = require("express").Router();
 const Blog = require("../models/blog");
-const User = require("../models/user");
-const jwt = require("jsonwebtoken");
+const middleware = require("../utils/middleware");
 
 blogRouter.get("/", async (request, response) => {
     const blogs = await Blog.find({}).populate("user", {
@@ -11,13 +10,9 @@ blogRouter.get("/", async (request, response) => {
     response.json(blogs);
 });
 
-blogRouter.post("/", async (request, response) => {
+blogRouter.post("/", middleware.userExtractor, async (request, response) => {
     const body = request.body;
-    const decodedToken = jwt.verify(request.token, process.env.SECRET);
-    if (!decodedToken.id) {
-        return response.status(401).json({ error: "token invalid" });
-    }
-    const user = await User.findById(decodedToken.id);
+    const user = request.user;
 
     const blog = new Blog({
         title: body.title,
@@ -32,21 +27,23 @@ blogRouter.post("/", async (request, response) => {
     response.status(201).json(newBlog);
 });
 
-blogRouter.delete("/:id", async (request, response) => {
-    const blog = await Blog.findById(request.params.id);
-    const decodedToken = jwt.verify(request.token, process.env.SECRET);
+blogRouter.delete(
+    "/:id",
+    middleware.userExtractor,
+    async (request, response) => {
+        const blog = await Blog.findById(request.params.id);
+        const user = request.user;
 
-    const blogUserId = blog.user[0]._id.toString();
+        const blogUserId = blog.user[0]._id.toString();
 
-    if (!decodedToken.id) {
-        return response.status(401).json({ error: "token invalid" });
-    } else if (blogUserId === decodedToken.id) {
-        await Blog.findByIdAndDelete(request.params.id);
-        response.status(204).end();
-    } else {
-        return response.status(401).json({ error: "unauthorised user" });
+        if (blogUserId === user.id) {
+            await Blog.findByIdAndDelete(request.params.id);
+            response.status(204).end();
+        } else {
+            return response.status(401).json({ error: "unauthorised user" });
+        }
     }
-});
+);
 
 blogRouter.put("/:id", async (request, response) => {
     const { title, author, url } = request.body;

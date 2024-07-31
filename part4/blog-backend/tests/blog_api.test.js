@@ -43,7 +43,30 @@ describe("when there is initially some blogs saved", () => {
     });
 
     describe("adding a new blog", () => {
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            const passwordHash = await bcrypt.hash("secret", 10);
+            const user = new User({
+                username: "root",
+                name: "admin",
+                passwordHash,
+            });
+
+            await user.save();
+
+            await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+        });
+
         test("a valid blog post can be added", async () => {
+            const login = await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+
             const newBlog = {
                 title: "Getting started with CSS",
                 author: "John Smith",
@@ -52,6 +75,7 @@ describe("when there is initially some blogs saved", () => {
 
             await api
                 .post("/api/blogs")
+                .set("Authorization", `Bearer ${login.body.token}`)
                 .send(newBlog)
                 .expect(201)
                 .expect("Content-Type", /application\/json/);
@@ -67,7 +91,26 @@ describe("when there is initially some blogs saved", () => {
             assert(contents.includes("Getting started with CSS"));
         });
 
+        test("no token is provided which returns a 401 error", async () => {
+            const newBlog = {
+                title: "",
+                author: "John Smith",
+                url: "www.test.com",
+            };
+
+            await api.post("/api/blogs").send(newBlog).expect(401);
+
+            const blogsAtEnd = await helper.blogsInDb();
+
+            assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length);
+        });
+
         test("if likes is not provided, then default to 0", async () => {
+            const login = await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+
             const newBlog = {
                 title: "Getting started with CSS",
                 author: "John Smith",
@@ -76,6 +119,7 @@ describe("when there is initially some blogs saved", () => {
 
             await api
                 .post("/api/blogs")
+                .set("Authorization", `Bearer ${login.body.token}`)
                 .send(newBlog)
                 .expect(201)
                 .expect("Content-Type", /application\/json/);
@@ -94,13 +138,22 @@ describe("when there is initially some blogs saved", () => {
         });
 
         test("blog without title is not added", async () => {
+            const login = await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+
             const newBlog = {
                 title: "",
                 author: "John Smith",
                 url: "www.test.com",
             };
 
-            await api.post("/api/blogs").send(newBlog).expect(400);
+            await api
+                .post("/api/blogs")
+                .set("Authorization", `Bearer ${login.body.token}`)
+                .send(newBlog)
+                .expect(400);
 
             const blogsAtEnd = await helper.blogsInDb();
 
@@ -108,13 +161,22 @@ describe("when there is initially some blogs saved", () => {
         });
 
         test("blog without url is not added", async () => {
+            const login = await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+
             const newBlog = {
                 title: "Flexbox is great",
                 author: "John Smith",
                 url: "",
             };
 
-            await api.post("/api/blogs").send(newBlog).expect(400);
+            await api
+                .post("/api/blogs")
+                .set("Authorization", `Bearer ${login.body.token}`)
+                .send(newBlog)
+                .expect(400);
 
             const blogsAtEnd = await helper.blogsInDb();
 
@@ -123,18 +185,55 @@ describe("when there is initially some blogs saved", () => {
     });
 
     describe("deleting a blog", () => {
-        test("succeeds if the id is valid", async () => {
-            const blogsAtStart = await helper.blogsInDb();
-            const blogToDelete = blogsAtStart[0];
+        beforeEach(async () => {
+            await User.deleteMany({});
 
-            await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+            const passwordHash = await bcrypt.hash("secret", 10);
+            const user = new User({
+                username: "root",
+                name: "admin",
+                passwordHash,
+            });
+
+            await user.save();
+
+            await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+        });
+
+        test("succeeds if the id is valid", async () => {
+            const login = await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+
+            const newBlog = {
+                title: "Getting started with CSS",
+                author: "John Smith",
+                url: "www.test.com",
+            };
+
+            await api
+                .post("/api/blogs")
+                .set("Authorization", `Bearer ${login.body.token}`)
+                .send(newBlog)
+                .expect(201)
+                .expect("Content-Type", /application\/json/);
+
+            const blogsAtStart = await helper.blogsInDb();
+
+            const blogToDelete = blogsAtStart[blogsAtStart.length - 1];
+
+            await api
+                .delete(`/api/blogs/${blogToDelete.id}`)
+                .set("Authorization", `Bearer ${login.body.token}`)
+                .expect(204);
 
             const blogsAtEnd = await helper.blogsInDb();
 
-            assert.strictEqual(
-                blogsAtEnd.length,
-                helper.initialBlogs.length - 1
-            );
+            assert.strictEqual(blogsAtEnd.length, blogsAtStart.length - 1);
 
             const contents = blogsAtEnd.map((r) => r.title);
             assert(!contents.includes(blogToDelete.title));
@@ -143,8 +242,26 @@ describe("when there is initially some blogs saved", () => {
 
     describe("updating a blog post", () => {
         test("successfully updates a blog post", async () => {
+            const login = await api.post("/api/login").send({
+                username: "root",
+                password: "secret",
+            });
+
+            const newBlog = {
+                title: "Getting started with CSS",
+                author: "John Smith",
+                url: "www.test.com",
+            };
+
+            await api
+                .post("/api/blogs")
+                .set("Authorization", `Bearer ${login.body.token}`)
+                .send(newBlog)
+                .expect(201)
+                .expect("Content-Type", /application\/json/);
+
             const blogsAtStart = await helper.blogsInDb();
-            const blogToUpdate = blogsAtStart[0];
+            const blogToUpdate = blogsAtStart[blogsAtStart.length - 1];
 
             const updatedBlog = {
                 title: "Flexbox is great",
@@ -155,6 +272,7 @@ describe("when there is initially some blogs saved", () => {
 
             await api
                 .put(`/api/blogs/${blogToUpdate.id}`)
+                .set("Authorization", `Bearer ${login.body.token}`)
                 .send(updatedBlog)
                 .expect(200);
 
