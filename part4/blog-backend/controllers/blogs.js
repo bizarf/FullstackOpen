@@ -3,14 +3,6 @@ const Blog = require("../models/blog");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
-const getTokenFrom = (request) => {
-    const authorization = request.get("authorization");
-    if (authorization && authorization.startsWith("Bearer ")) {
-        return authorization.replace("Bearer ", "");
-    }
-    return null;
-};
-
 blogRouter.get("/", async (request, response) => {
     const blogs = await Blog.find({}).populate("user", {
         username: 1,
@@ -21,7 +13,7 @@ blogRouter.get("/", async (request, response) => {
 
 blogRouter.post("/", async (request, response) => {
     const body = request.body;
-    const decodedToken = jwt.verify(request.token(request), process.env.SECRET);
+    const decodedToken = jwt.verify(request.token, process.env.SECRET);
     if (!decodedToken.id) {
         return response.status(401).json({ error: "token invalid" });
     }
@@ -41,8 +33,19 @@ blogRouter.post("/", async (request, response) => {
 });
 
 blogRouter.delete("/:id", async (request, response) => {
-    await Blog.findByIdAndDelete(request.params.id);
-    response.status(204).end();
+    const blog = await Blog.findById(request.params.id);
+    const decodedToken = jwt.verify(request.token, process.env.SECRET);
+
+    const blogUserId = blog.user[0]._id.toString();
+
+    if (!decodedToken.id) {
+        return response.status(401).json({ error: "token invalid" });
+    } else if (blogUserId === decodedToken.id) {
+        await Blog.findByIdAndDelete(request.params.id);
+        response.status(204).end();
+    } else {
+        return response.status(401).json({ error: "unauthorised user" });
+    }
 });
 
 blogRouter.put("/:id", async (request, response) => {
