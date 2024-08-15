@@ -2,14 +2,6 @@ const logger = require("./logger");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
-const requestLogger = (request, response, next) => {
-    logger.info("Method:", request.method);
-    logger.info("Path:  ", request.path);
-    logger.info("Body:  ", request.body);
-    logger.info("---");
-    next();
-};
-
 // 404 message for when a user tries to go to a route that doesn't exist
 const unknownEndpoint = (req, res) => {
     res.status(404).send({ error: "unknown endpoint" });
@@ -75,7 +67,6 @@ const userExtractor = async (req, res, next) => {
 module.exports = {
     unknownEndpoint,
     errorHandler,
-    requestLogger,
     tokenExtractor,
     userExtractor,
 };

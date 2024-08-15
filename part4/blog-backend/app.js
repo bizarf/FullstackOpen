@@ -3,6 +3,7 @@ const express = require("express");
 require("express-async-errors");
 const app = express();
 const cors = require("cors");
+const morgan = require("morgan");
 const mongoose = require("mongoose");
 const blogsRouter = require("./controllers/blogs");
 const usersRouter = require("./controllers/users");
@@ -23,7 +24,11 @@ mongoose
 
 app.use(cors());
 app.use(express.json());
-app.use(middleware.requestLogger);
+if (process.env.NODE_ENV !== "production") {
+    app.use(morgan("dev"));
+} else {
+    app.use(morgan("tiny"));
+}
 app.use(middleware.tokenExtractor);
 
 app.use("/api/blogs", blogsRouter);

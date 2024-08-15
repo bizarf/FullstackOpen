@@ -1,4 +1,4 @@
-const notesRouter = require("expresponses").Router();
+const notesRouter = require("express").Router();
 const Note = require("../models/note");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
@@ -52,7 +52,7 @@ notesRouter.post("/", async (request, response) => {
     });
 
     const savedNote = await note.save();
-    user.notes = [...user, savedNote._id];
+    user.notes = [...user.notes, savedNote._id];
     await user.save();
     response.status(201).json(savedNote);
 });

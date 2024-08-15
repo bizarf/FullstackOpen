@@ -9,6 +9,7 @@ const logger = require("./utils/logger");
 const mongoose = require("mongoose");
 const notesRouter = require("./controllers/notes");
 const usersRouter = require("./controllers/users");
+const loginRouter = require("./controllers/login");
 
 mongoose.set("strictQuery", false);
 
@@ -31,6 +32,7 @@ app.use(middleware.requestLogger);
 
 app.use("/api/notes", notesRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/login", loginRouter);
 
 app.use(middleware.unknownEndpoint);
 // this has to be the last loaded middleware, also all the routes should be registered before this!
