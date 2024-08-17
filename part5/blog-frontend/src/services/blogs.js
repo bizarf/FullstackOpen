@@ -21,4 +21,22 @@ const create = async (newObject) => {
     return res.data;
 };
 
-export default { getAll, setToken, create };
+const addLike = async (id, newObject) => {
+    const config = {
+        headers: { Authorization: token },
+    };
+
+    const req = axios.put(`${baseUrl}/like/${id}`, newObject, config);
+    return req.then((res) => res.data);
+};
+
+const remove = async (id) => {
+    const config = {
+        headers: { Authorization: token },
+    };
+
+    const req = axios.delete(`${baseUrl}/${id}`, config);
+    return req.then((res) => res.data);
+};
+
+export default { getAll, setToken, create, addLike, remove };

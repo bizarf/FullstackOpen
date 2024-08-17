@@ -3,6 +3,9 @@ import Blog from "./components/Blog";
 import Notification from "./components/Notification ";
 import blogService from "./services/blogs";
 import loginService from "./services/login";
+import Togglable from "./components/Togglable";
+import BlogForm from "./components/BlogForm";
+import { useRef } from "react";
 
 const App = () => {
     const [blogs, setBlogs] = useState([]);
@@ -10,9 +13,7 @@ const App = () => {
     const [password, setPassword] = useState("");
     const [notification, setNotification] = useState(null);
     const [user, setUser] = useState(null);
-    const [title, setTitle] = useState("");
-    const [author, setAuthor] = useState("");
-    const [url, setUrl] = useState("");
+    const blogFormRef = useRef();
 
     // fetches all blogs
     useEffect(() => {
@@ -64,36 +65,62 @@ const App = () => {
         setUser(null);
     };
 
-    const handleNewBlog = async (e) => {
-        e.preventDefault();
-
+    const handleNewBlog = async (blogObject) => {
         try {
-            const newBlog = await blogService.create({
-                title,
-                author,
-                url,
-            });
+            const newBlog = await blogService.create(blogObject);
 
             if (newBlog) {
+                blogFormRef.current.toggleVisibility();
                 setNotification({
                     type: "success",
-                    message: `a new blog. ${title} by ${author} added`,
+                    message: `a new blog. ${newBlog.title} by ${newBlog.author} added`,
                 });
                 setTimeout(() => {
                     setNotification(null);
                 }, 5000);
                 // copy the array and add the above newBlog object to the array
                 setBlogs([...blogs, newBlog]);
-                // reset the inputs
-                setTitle("");
-                setAuthor("");
-                setUrl("");
             }
         } catch (error) {
             setNotification({ type: "error", message: "Something went wrong" });
             setTimeout(() => {
                 setNotification(null);
             }, 5000);
+
+            if (error.response.data.error === "token expired") {
+                setNotification({
+                    type: "error",
+                    message: "Please login again",
+                });
+                setTimeout(() => {
+                    setNotification(null);
+                    setUser(null);
+                }, 5000);
+            }
+        }
+    };
+
+    const handleLike = async (id, blogObject) => {
+        try {
+            const addLike = await blogService.addLike(id, blogObject);
+
+            setBlogs(blogs.map((blog) => (blog.id !== id ? blog : addLike)));
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const handleDelete = async (id, title, author) => {
+        const deletePrompt = confirm(`Remove blog: ${title} by ${author}`);
+        if (deletePrompt) {
+            try {
+                const remove = await blogService.remove(id);
+                if (remove.success) {
+                    setBlogs(blogs.filter((b) => b.id !== id));
+                }
+            } catch (error) {
+                console.log(error);
+            }
         }
     };
 
@@ -136,39 +163,19 @@ const App = () => {
                 <p>{user.name} logged-in</p>
                 <button onClick={handleLogout}>Logout</button>
             </div>
-            <div>
-                <h3>create new</h3>
-                <form onSubmit={handleNewBlog}>
-                    <div>
-                        Title
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={({ target }) => setTitle(target.value)}
-                        />
-                    </div>
-                    <div>
-                        Author
-                        <input
-                            type="text"
-                            value={author}
-                            onChange={({ target }) => setAuthor(target.value)}
-                        />
-                    </div>
-                    <div>
-                        Url
-                        <input
-                            type="text"
-                            value={url}
-                            onChange={({ target }) => setUrl(target.value)}
-                        />
-                    </div>
-                    <button type="submit">Create</button>
-                </form>
-            </div>
-            {blogs.map((blog) => (
-                <Blog key={blog.id} blog={blog} />
-            ))}
+            <Togglable buttonLabel="new blog" ref={blogFormRef}>
+                <BlogForm handleNewBlog={handleNewBlog} />
+            </Togglable>
+            {blogs
+                .sort((a, b) => a.likes - b.likes)
+                .map((blog) => (
+                    <Blog
+                        key={blog.id}
+                        blog={blog}
+                        handleLike={handleLike}
+                        handleDelete={handleDelete}
+                    />
+                ))}
         </div>
     );
 };
