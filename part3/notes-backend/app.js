@@ -34,6 +34,12 @@ app.use("/api/notes", notesRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/login", loginRouter);
 
+// if the app is in testing mode, then use this route
+if (process.env.NODE_ENV === "test") {
+    const testingRouter = require("./controllers/testing");
+    app.use("/api/testing", testingRouter);
+}
+
 app.use(middleware.unknownEndpoint);
 // this has to be the last loaded middleware, also all the routes should be registered before this!
 app.use(middleware.errorHandler);
