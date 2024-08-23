@@ -128,20 +128,21 @@ const App = () => {
             <h2>blogs</h2>
             <Notification notification={notification} />
             <div>
-                <p>{user.name} logged-in</p>
+                <p>{user.name} logged in</p>
                 <button onClick={handleLogout}>Logout</button>
             </div>
             <Togglable buttonLabel="new blog" ref={blogFormRef}>
                 <BlogForm handleNewBlog={handleNewBlog} />
             </Togglable>
             {blogs
-                .sort((a, b) => a.likes - b.likes)
+                .sort((a, b) => b.likes - a.likes)
                 .map((blog) => (
                     <Blog
                         key={blog.id}
                         blog={blog}
                         handleLike={handleLike}
                         handleDelete={handleDelete}
+                        user={user}
                     />
                 ))}
         </div>

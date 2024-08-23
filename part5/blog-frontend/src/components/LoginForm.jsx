@@ -23,6 +23,7 @@ const LoginForm = ({ handleLogin, notification }) => {
                 <div>
                     Username
                     <input
+                        data-testid="username"
                         type="text"
                         value={username}
                         name="username"
@@ -32,6 +33,7 @@ const LoginForm = ({ handleLogin, notification }) => {
                 <div>
                     Password
                     <input
+                        data-testid="password"
                         type="password"
                         name="password"
                         value={password}
